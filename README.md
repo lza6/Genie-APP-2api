@@ -153,3 +153,8 @@ python stress_test.py --requests 40 --concurrency 10
 - 账号池 `accounts.json`（含 `refreshToken`）与抓取的 `sys_assistants.json` 均已在 `.gitignore` 中，不随仓库分发。
 - 所有 idToken 都在运行时通过匿名注册现铸，仓库内不存在任何可用凭证；`.secrets/` 目录被忽略。
 
+## 免责
+
+本项目是对公开发布的 Android 安装包做协议研究、以求互通与安全评估的产物，与 AppNation 及 Genie 产品无任何隶属或授权关系，相关商标归各自所有者。使用风险自负，请自行遵守上游服务条款。
+
+
