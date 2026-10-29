@@ -2,7 +2,28 @@
 
 把 Genie（AppNation，`usegenie.ai`）的移动端协议还原成 OpenAI 兼容接口。纯 Python，零 APK 依赖，账号自动注册。
 
-> 逆向细节、端点目录、踩坑记录见 **[ANALYSIS.md](ANALYSIS.md)**。
+> 逆向细节、端点目录、踩坑记录见 **[ANALYSIS.md](ANALYSIS.md)**；给 new-api 对接会话看 **[docs/NEW-API-INTEGRATION.md](docs/NEW-API-INTEGRATION.md)**。
+
+## 30 秒速查
+
+```http
+POST https://genie-production-yfvxbm4e6q-uc.a.run.app/v2/chats/local/completions
+Authorization: Bearer <firebase idToken>      # 匿名 signUp 现铸
+X-App-Platform: android
+X-App-Version: 7.9.2
+X-App-Id: 1658377526
+Content-Type: application/json
+
+{"model":"gpt-4o-mini","messages":[{"type":"prompt","content":"hi","fromUser":true}]}
+```
+
+```
+→ text/event-stream
+  event: completion   data: {"content":"片段"}      ← 只有这个事件有正文
+  event: completion-done  data: {"reason":"stop"}
+```
+
+三个数字记住就行：**单模型 `gpt-4o-mini`、7 次/号/天、额度耗尽也是 HTTP 200**。
 
 ---
 
