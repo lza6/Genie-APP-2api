@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genie 2API · 本地 Demo</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#141821; --panel-2:#1b2130; --line:#262d3d;
+    --text:#e8ecf4; --muted:#8b95a8; --accent:#6c8cff; --accent-2:#9b6cff;
+    --ok:#3ddc97; --warn:#ffb84d; --err:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif;
+    background:radial-gradient(1200px 600px at 15% -10%,#1b2340 0%,transparent 60%),var(--bg);
+    color:var(--text); display:flex; flex-direction:column;
+  }
+  header{
+    display:flex; align-items:center; gap:14px; padding:16px 22px;
+    border-bottom:1px solid var(--line); background:rgba(20,24,33,.72); backdrop-filter:blur(10px);
+  }
+  .logo{
+    width:34px;height:34px;border-radius:10px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;
+  }
+  header h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.2px}
+  header .sub{font-size:12px;color:var(--muted)}
+  .spacer{flex:1}
+  .pill{
+    font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
+    background:var(--panel);color:var(--muted);white-space:nowrap;
+  }
+  .pill b{color:var(--ok);font-weight:600}
+  main{flex:1;overflow-y:auto;padding:26px 22px 8px}
+  .wrap{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+  .msg{display:flex;gap:12px;animation:fade .22s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .avatar{
+    width:30px;height:30px;border-radius:9px;flex:0 0 30px;display:grid;place-items:center;
+    font-size:12px;font-weight:700;background:var(--panel-2);color:var(--muted);
+  }
+  .msg.user .avatar{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
+  .bubble{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:12px 15px;max-width:100%;white-space:pre-wrap;word-break:break-word;
+  }
+  .msg.user .bubble{background:var(--panel-2);border-color:#2f3850}
+  .meta{font-size:11px;color:var(--muted);margin-bottom:4px}
+  .empty{text-align:center;color:var(--muted);padding:60px 20px}
+  .empty h2{color:var(--text);font-size:18px;margin:0 0 8px}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .chip{
+    border:1px solid var(--line);background:var(--panel);color:var(--text);
+    padding:8px 14px;border-radius:999px;cursor:pointer;font-size:13px;transition:.15s;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  footer{border-top:1px solid var(--line);background:rgba(20,24,33,.8);padding:14px 22px}
+  .composer{max-width:820px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
+  textarea{
+    flex:1;resize:none;min-height:46px;max-height:160px;padding:13px 15px;border-radius:13px;
+    border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;outline:none;
+  }
+  textarea:focus{border-color:var(--accent)}
+  button.send{
+    height:46px;padding:0 22px;border-radius:13px;border:0;cursor:pointer;font-weight:600;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:14px;
+  }
+  button.send:disabled{opacity:.5;cursor:not-allowed}
+  .hint{max-width:820px;margin:8px auto 0;font-size:11px;color:var(--muted);display:flex;gap:12px}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:5px}
+  .dot.err{background:var(--err)}
+  .cursor::after{content:"▋";color:var(--accent);animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">G</div>
+  <div>
+    <h1>Genie 2API</h1>
+    <div class="sub">co.appnation.geniechat v7.9.2 · gpt-4o-mini</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="pill" id="stats">号池加载中…</div>
+</header>
+
+<main>
+  <div class="wrap" id="list">
+    <div class="empty" id="empty">
+      <h2>本地逆向 Demo</h2>
+      <div>上游真实能力：单模型 <b>gpt-4o-mini</b> 文本补全，SSE 流式。</div>
+      <div>每账号每天 7 次，网关自动轮换号池。</div>
+      <div class="chips">
+        <div class="chip">用一句话解释 Server-Sent Events 是什么</div>
+        <div class="chip">写一个 Python 快速排序</div>
+        <div class="chip">把「你好世界」翻译成 8 种语言</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="输入消息，Enter 发送，Shift+Enter 换行"></textarea>
+    <button class="send" id="send">发送</button>
+  </div>
+  <div class="hint">
+    <span><span class="dot" id="dot"></span><span id="status">就绪</span></span>
+    <span>流式输出 · 号池自动换号</span>
+  </div>
+</footer>
+
+<script>
+const list = document.getElementById('list');
+const empty = document.getElementById('empty');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const statsEl = document.getElementById('stats');
+const statusEl = document.getElementById('status');
+const dotEl = document.getElementById('dot');
+const history = [];
+
+function setStatus(text, isError) {
+  statusEl.textContent = text;
+  dotEl.className = 'dot' + (isError ? ' err' : '');
+}
+
+async function refreshStats() {
+  try {
+    const res = await fetch('/api/stats');
+    const s = await res.json();
+    statsEl.innerHTML = `号池 <b>${s.usable}</b>/${s.accounts} 可用 · 剩余 <b>${s.capacity_left}</b> 次`;
+  } catch (e) {
+    statsEl.textContent = '号池状态不可用';
+  }
+}
+
+function appendMessage(role, text) {
+  empty.style.display = 'none';
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + role;
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'user' ? '你' : 'G';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  meta.textContent = role === 'user' ? '你' : 'Genie';
+  const body = document.createElement('div');
+  body.textContent = text;
+  bubble.append(meta, body);
+  wrap.append(avatar, bubble);
+  list.appendChild(wrap);
+  list.parentElement.scrollTop = list.parentElement.scrollHeight;
+  return body;
+}
+
+async function send(text) {
+  const content = text.trim();
+  if (!content || sendBtn.disabled) return;
+  sendBtn.disabled = true;
+  input.value = '';
+  input.style.height = '46px';
+  setStatus('请求中…', false);
+
+  appendMessage('user', content);
+  history.push({ role: 'user', content });
+  const target = appendMessage('assistant', '');
+  target.classList.add('cursor');
+
+  let answer = '';
+  let failed = false;
+  try {
+    const res = await fetch('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-4o-mini', messages: history, stream: true })
+    });
+    if (!res.ok || !res.body) throw new Error('HTTP ' + res.status);
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop();
+      for (const block of lines) {
+        const line = block.trim();
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6);
+        if (payload === '[DONE]') continue;
+        let event;
+        try { event = JSON.parse(payload); } catch { continue; }
+        if (event.error) throw new Error(event.error.message || '上游错误');
+        const delta = event.choices && event.choices[0] && event.choices[0].delta;
+        if (delta && delta.content) {
+          answer += delta.content;
+          target.textContent = answer;
+          list.parentElement.scrollTop = list.parentElement.scrollHeight;
+        }
+      }
+    }
+  } catch (error) {
+    failed = true;
+    answer = answer || '';
+    target.textContent = answer + (answer ? '\n\n' : '') + '⚠️ ' + error.message;
+  } finally {
+    target.classList.remove('cursor');
+    sendBtn.disabled = false;
+    if (!failed) {
+      history.push({ role: 'assistant', content: answer });
+      setStatus('完成', false);
+    } else {
+      setStatus('失败', true);
+    }
+    refreshStats();
+    input.focus();
+  }
+}
+
+sendBtn.addEventListener('click', () => send(input.value));
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); }
+});
+input.addEventListener('input', () => {
+  input.style.height = '46px';
+  input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+});
+document.querySelectorAll('.chip').forEach((chip) => {
+  chip.addEventListener('click', () => send(chip.textContent));
+});
+
+refreshStats();
+setInterval(refreshStats, 15000);
+input.focus();
+</script>
+</body>
+</html>

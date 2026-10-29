@@ -1,0 +1,30 @@
+# 凭证与运行时状态（含 Firebase refreshToken，切勿提交）
+accounts.json
+accounts.json.tmp
+*idtoken*.txt
+*token*.txt
+refresh.txt
+login.json
+n1.json
+req*.json
+
+# 反编译产物（体积大，本地保留）
+blutter_out/
+lib/
+blutter*.log
+emu_*.log
+vs_env.txt
+
+# 运行时
+__pycache__/
+*.pyc
+server.log
+demo.log
+
+# 临时探针输出
+r*.json
+hdr*.txt
+sse*.txt
+n1.json
+.secrets/
+sys_assistants.json
