@@ -1,0 +1,30 @@
+[
+ {
+  "target": 228000,
+  "total": 228061,
+  "status": 200,
+  "found": true,
+  "answer": "B228000"
+ },
+ {
+  "target": 232000,
+  "total": 232056,
+  "status": 200,
+  "found": true,
+  "answer": "B232000"
+ },
+ {
+  "target": 236000,
+  "total": 236051,
+  "status": 200,
+  "found": true,
+  "answer": "B236000"
+ },
+ {
+  "target": 256000,
+  "needle_pos": "8%",
+  "status": 200,
+  "found": false,
+  "answer": "This seems to be an overly repetitive and lengthy text. How can I assist you today? If you have a specific request or need help with something, feel free to let me know! 😊"
+ }
+]

@@ -1,0 +1,109 @@
+{
+ "models": [
+  {
+   "request": "OPEN_AI_CHATGPT_4_0_O_MINI_MODEL",
+   "status": 200,
+   "upstream": "OPEN_AI_CHATGPT_4_0_O_MINI_MODEL",
+   "verdict": "OK",
+   "text": "OK! 😊 How can I assist you today?"
+  },
+  {
+   "request": "OPEN_AI_CHATGPT_4_0_CHAT_MODEL",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "OPEN_AI_CHATGPT_4_0_VISION_MODEL",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "OPEN_AI_CHATGPT_3_5_CHAT_MODEL",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "OPEN_AI_CHATGPT_3_5_INSTRUCT_MODEL",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "META_LLAMA_2_CHAT_MODEL",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "gpt-4o-mini",
+   "status": 200,
+   "upstream": "OPEN_AI_CHATGPT_4_0_O_MINI_MODEL",
+   "verdict": "OK",
+   "text": "OK! 😊 How can I assist you today?"
+  },
+  {
+   "request": "gpt-4o",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "gpt-4",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "gpt-3.5-turbo",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "gpt-4-vision",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "llama-2",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "gpt-4.1",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "claude-3.5-sonnet",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  },
+  {
+   "request": "gemini-2.0-flash",
+   "status": 402,
+   "upstream": "",
+   "verdict": "NEEDS_PRO",
+   "text": ""
+  }
+ ]
+}

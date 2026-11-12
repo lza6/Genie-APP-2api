@@ -1,0 +1,26 @@
+[
+ {
+  "target": 2000,
+  "status": 200,
+  "chars": 1203,
+  "reason": "stop",
+  "refused": false,
+  "head": "咖啡的起源可以追溯到埃塞俄比亚，相传在9世纪，埃塞俄比亚的牧羊人卡尔迪发现了咖啡豆的神奇之处。他的羊群在吃过一种特殊的红"
+ },
+ {
+  "target": 2500,
+  "status": 200,
+  "chars": 1024,
+  "reason": "stop",
+  "refused": false,
+  "head": "咖啡，作为一种全球广泛消费的饮品，背后有着丰富而悠久的历史。其中，咖啡的起源地是埃塞俄比亚，它的传播历程则是一个与文化、"
+ },
+ {
+  "target": 2800,
+  "status": 200,
+  "chars": 12,
+  "reason": "stop",
+  "refused": true,
+  "head": "抱歉，我无法满足该请求。"
+ }
+]

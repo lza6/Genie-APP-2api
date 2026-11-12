@@ -1,160 +1,113 @@
-# Genie 2API · co.appnation.geniechat v7.9.2
+# Genie-APP-2api
 
-把 Genie（AppNation，`usegenie.ai`）的移动端协议还原成 OpenAI 兼容接口。纯 Python，零 APK 依赖，账号自动注册。
+Genie `co.appnation.geniechat` v7.9.2 (Premium) → 上游协议还原 → OpenAI 兼容 2API 网关。
+仅用于安全研究与协议学习。
 
-> 逆向细节、端点目录、踩坑记录见 **[ANALYSIS.md](ANALYSIS.md)**；给 new-api 对接会话看 **[docs/NEW-API-INTEGRATION.md](docs/NEW-API-INTEGRATION.md)**。
+## TL;DR
 
-## 30 秒速查
+上游 `https://genie-production-yfvxbm4e6q-uc.a.run.app`，鉴权是 **Firebase 匿名登录换 idToken**（apiKey 内嵌在 `resources.arsc`），无设备绑定、无证书固定。
 
-```http
-POST https://genie-production-yfvxbm4e6q-uc.a.run.app/v2/chats/local/completions
-Authorization: Bearer <firebase idToken>      # 匿名 signUp 现铸
-X-App-Platform: android
-X-App-Version: 7.9.2
-X-App-Id: 1658377526
-Content-Type: application/json
-
-{"model":"gpt-4o-mini","messages":[{"type":"prompt","content":"hi","fromUser":true}]}
-```
-
-```
-→ text/event-stream
-  event: completion   data: {"content":"片段"}      ← 只有这个事件有正文
-  event: completion-done  data: {"reason":"stop"}
-```
-
-三个数字记住就行：**单模型 `gpt-4o-mini`、7 次/号/天、额度耗尽也是 HTTP 200**。
-
----
-
-## 事实表（全部实测，非推断）
-
-| 项目 | 值 |
-|------|-----|
-| 可用模型 | `gpt-4o-mini`（唯一。其它模型名会返回假答复） |
-| 协议 | `POST /v2/chats/local/completions`，`text/event-stream` |
-| 鉴权 | Firebase 匿名 ID Token，`Authorization: Bearer` |
-| 额度 | **7 次 / 账号 / UTC 日** |
-| 额度归属 | 按 uid，与 IP／设备无关 → 号池可横向扩 |
-| 号池 | 匿名注册零验证，用尽自动补号 |
-| 参数 | `systemPrompt`/`maxTokens`/`temperature` 上游忽略；system 由网关前置拼接 |
-| 多轮 | 支持（`prompt` / `response` 交替） |
-| 视觉／生图／语音 | 无 |
-
----
-
-## 快速开始
+**免费档只有一个模型 `gpt-4o-mini`，但它能识图、能跑 236K 字符上下文。** 生图与联网走 agent 工具，执行前被 Pro 权益硬拦。
 
 ```bash
-cd D:\apk-analysis\genie792
 pip install flask requests
-python demo_server.py --port 8952
-# 打开 http://127.0.0.1:8952
-```
+python demo_server.py            # http://127.0.0.1:8952
+GENIE_MODE=mock python demo_server.py   # 不消耗账号额度的本地模式
 
-首次请求会自动注册一个 Firebase 匿名账号（约 1 秒），之后按需扩号。
-
-### OpenAI 兼容调用
-
-```bash
 curl http://127.0.0.1:8952/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"你好"}],"stream":true}'
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"你好"}]}'
 ```
 
-非流式去掉 `"stream":true` 即可；`role:"system"` 会被网关拼进首条用户消息。
+浏览器打开 `http://127.0.0.1:8952/` 是 demo 页：左侧 34 个官方助手，中间对话/生图双 tab，右侧号池与延迟。
 
-### 接口
+## 能力速览
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/v1/chat/completions` | OpenAI 兼容，支持 `stream` |
-| GET | `/v1/models` | 返回 `gpt-4o-mini` |
-| GET | `/api/stats` | 号池可用数 / 今日已用 / 剩余容量 |
-| GET | `/` | demo 页 |
+| 能力 | 结论 |
+|---|---|
+| 可用模型 | **1 个**：`gpt-4o-mini`（其余 14 个名字全 402 `NEEDS_PRO`） |
+| 上下文 | 236K **字符**通过 / 240K 起静默截断（按字符不按 token，中英一致） |
+| 单次输出 | 约 1 200 中文字；请求 ≥2 800 字直接拒答 |
+| 识图 | ✅ 图片直链放 content 第一行即可，实测能读图内文字与版面 |
+| 函数调用 | 上游无 tools 通道；**网关侧伪调用已实现**，5/5 + 6/6 |
+| 生图 | ❌ 协议通（`?type=image_generation` → `agent-status text2image`），Pro 拦 |
+| 联网搜索 | ❌ 同 Pro 门禁 |
+| 流式 | 恒 SSE，但**伪流式**：生成完一次性推，TTFT 6–9 s |
+| 吞吐 | 86–122 中文字符/秒（≈51–72 tok/s） |
+| `parameters` | 整块被上游丢弃（temperature/maxTokens/systemPrompt/seed 全无效） |
 
----
+完整数据见 [`docs/CAPABILITIES.md`](docs/CAPABILITIES.md)，协议细节见 [`docs/REVERSE-REPORT.md`](docs/REVERSE-REPORT.md)，对接 new-api 见 [`docs/NEW-API-INTEGRATION.md`](docs/NEW-API-INTEGRATION.md)。
 
-## 号池
-
-`accounts.json` 持久化，字段 `refresh_token / used / exhausted / day_key`。
-
-- 取号 → 额度满或已耗尽 → 换号；全满 → 现注册新号（`register_anonymous_account()`）
-- idToken 1 小时过期，靠 `refreshToken` 自动续期，不重复注册
-- UTC 日切自动清零
-- 环境变量：`GENIE_DAILY_QUOTA`(默认 7)、`GENIE_MAX_ACCOUNTS`(默认 500)、`GENIE_TIMEOUT`
-
----
-
-## 实测验证
-
-### 端到端
+## 协议（最小可用）
 
 ```
-$ python browser_test.py
-标题: Genie 2API · 本地 Demo
-号池状态: 号池 1/6 可用 · 剩余 3 次
-状态栏: 完成
-助手回复(81 字符): 'SSE（Streaming SIMD Extensions）是一种...'
-截图: evidence_demo.png
-PASS
+POST https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=<FIREBASE_KEY>
+     {"returnSecureToken": true}          -> idToken / refreshToken / localId
+
+POST https://genie-production-yfvxbm4e6q-uc.a.run.app/v2/chats/local/completions[?type=<action>]
+     Authorization: Bearer <idToken>
+     {model, messages:[{type:"prompt"|"response", content, fromUser}], parameters, chatId?}
+
+<- SSE:
+   completion-started  {"model":"OPEN_AI_CHATGPT_4_0_O_MINI_MODEL","service":"text2text"}
+   agent-status        {"status":"tool_calling"|"tool_done","service":"text2image","step":0}
+   completion          {"content":"..."} / {"content":"...","media":{"url":"...","blurhash":"..."}}
+   completion-done     {"reason":"stop"}
 ```
 
-真实 Chromium，点建议 chip → 等流式收完 → 断言非空 → 截图 `evidence_demo.png`。
+- `X-App-*` 头实测非必需，只有 `Authorization` 是硬要求。
+- 额度按 uid 计：**8 次/天**，超限仍是 HTTP 200 + 固定文案，且缺 `completion-done`。
+- 生图/联网：URL 加 `?type=image_generation` / `?type=web_search` 进 agent 通道；服务端按 prompt 意图分类，`type` 值本身不决定行为。
 
-### 压测（本机直连，非代理）
+## 目录
 
-| 并发 | 请求 | 成功 | 吞吐 | P50 | P95 | 号池 |
-|------|------|------|------|-----|-----|------|
-| 3 | 12 | 12/12 | 0.72 req/s | 3.20s | 5.72s | 自动扩至 2 号 |
-| 6 | 30 | 30/30 | 1.09 req/s | 5.18s | 8.52s | 自动扩至 6 号 |
-| 10 | 40 | 40/40 | 1.48 req/s | 6.10s | 10.06s | 自动扩至 11 号 |
-
-**82 次请求零失败**，换号对调用方完全透明。吞吐受上游单账号 7 次/日约束，理论上限 ≈ 号池容量 / 日。
-
-复跑：
-
-```bash
-python stress_test.py --requests 40 --concurrency 10
+```
+├── genie_client.py        协议封装 + 匿名账号池（文本 / 视觉 / agent 三条通道）
+├── demo_server.py         OpenAI 兼容网关（chat / images / 伪函数调用 / mock 双模）
+├── tool_calling.py        伪函数调用：工具协议注入、tool_call 解析、OpenAI 结构转换
+├── demo.html              demo 页（对话 / 生图双 tab + 工具调用开关 + 号池面板）
+├── stress_test.py         并发梯度压测
+├── browser_test.py        Playwright E2E（助手列表 / 流式 / 生图门禁 / 工具调用）
+├── verify_anon.py         匿名账号可用性单点验证
+├── tools/
+│   ├── smoke.py               网关冒烟（7 项）
+│   ├── bench.py               能力基准：模型矩阵 / 上下文阶梯 / TPS / 视觉 / 工具
+│   ├── check_tool_calling.py  伪函数调用 E2E（5 项）
+│   ├── check_vision.py        视觉透传验证
+│   ├── check_image.py         生图端点原始响应
+│   ├── bench_tool_stability.py 工具触发稳定性
+│   ├── probe_ctx_boundary.py  上下文边界定位
+│   ├── probe_ctx_cjk.py       中文上下文对照
+│   ├── probe_maxout*.py       输出规模边界
+│   └── probe_vision_*.py      视觉真实性验证
+└── docs/
+    ├── CAPABILITIES.md        能力基准（模型清单、上限、TPS 原始数据）
+    ├── REVERSE-REPORT.md      逆向报告（DTO、SSE、agent 通道、额度语义）
+    ├── NEW-API-INTEGRATION.md new-api 对接指南
+    ├── ANALYSIS-R1.md         第一轮分析（历史存档）
+    └── data/                  各基准的原始 JSON
 ```
 
----
+## 实测记录（2026-11-12）
 
-## 文件
+| 项 | 结果 |
+|---|---|
+| 网关冒烟 | 7/7（health / models / 非流式 / 流式 / 助手 / 统计 / 生图门禁） |
+| 伪函数调用 | 5/5 功能项 + 6/6 触发率，工具选择正确，延迟 1.87–2.80 s |
+| 视觉透传 | OpenAI `image_url` → 正确读出图内文字、色值、版面 |
+| mock 压测 1→20 并发 | 160 请求 0 失败，RPS 5.87 → 101.97 |
+| real 压测 1/2/4 并发 | 18 请求 0 失败，p50 2311 / 2243 / 4053 ms |
+| 浏览器 E2E | 4/4，console 零报错 |
+| 生图权益伪造 | 9 种 header/body/平台伪造全部无效 |
 
-| 文件 | 作用 |
-|------|------|
-| `genie_client.py` | 协议客户端 + 账号池（Firebase 注册/续期、SSE 解析、换号重试） |
-| `demo_server.py` | Flask OpenAI 兼容网关 |
-| `demo.html` | 单文件聊天 demo |
-| `stress_test.py` | 压测（并发/延迟/号池观测） |
-| `browser_test.py` | Playwright 真实浏览器验证 |
-| `ANALYSIS.md` | 逆向分析全记录 |
-| `quota_probe.py` / `param_probe.py` / `verify_anon.py` | 额度／参数／匿名号探测脚本 |
-| `sys_assistants.json` | 抓到的 34 个系统助手（含 systemPrompts） |
-| `blutter_out/` | Dart 全量反编译产物（`asm/` + `pp.txt`） |
+## 限制
 
----
+- 生图 / 联网需要真实 Pro 订阅 uid，免费档一张都出不了。
+- 成功响应的 `media{url, blurhash}` 格式按 `server_sent_event.dart` 解析器反推，**没有真实成功样本验证**。
+- 语音实时链路（`voice_chat_realtime` + `librive_text.so`）未还原。
+- `media` 字段（客户端图片附件通道）在裸协议下不被识别，正确格式未破解。
+- 额度窗口不是 UTC 自然日，跨零点验证不重置；具体窗口长度未定。
 
-## 已知限制与风险
+## 声明
 
-- **单账号 7 次/日**是上游硬约束。要走量必须扩号池；号的存活周期未做长观察（当前无任何风控反馈）。
-- **底模能力偏弱**：知识陈旧、输出偏短、偶发跑题（把 SSE 认成 SIMD 指令集）。适合轻量问答，不适合当主力模型。
-- 上游 `parameters` 全忽略 —— `max_tokens` / `temperature` 无法生效，长回答不可控。
-- 逆向产物仅供协议研究与本地验证，请自行评估对上游服务条款的影响。
-
----
-
-## 凭证说明（脱敏）
-
-本仓库**不含任何个人凭证或账号数据**：
-
-- `genie_client.py` 里的 Firebase `apiKey` 是目标 APK 内嵌的客户端公开常量（取自 `resources.arsc`），非个人密钥，复现所必需，故保留。它只能用于该项目自身的 Firebase 服务，无法访问任何私人数据。
-- 账号池 `accounts.json`（含 `refreshToken`）与抓取的 `sys_assistants.json` 均已在 `.gitignore` 中，不随仓库分发。
-- 所有 idToken 都在运行时通过匿名注册现铸，仓库内不存在任何可用凭证；`.secrets/` 目录被忽略。
-
-## 免责
-
-本项目是对公开发布的 Android 安装包做协议研究、以求互通与安全评估的产物，与 AppNation 及 Genie 产品无任何隶属或授权关系，相关商标归各自所有者。使用风险自负，请自行遵守上游服务条款。
-
-
+本项目仅用于安全研究与协议学习，不对因使用造成的任何后果负责。请遵守目标服务的使用条款。

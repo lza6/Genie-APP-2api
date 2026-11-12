@@ -1,0 +1,62 @@
+[
+ {
+  "prompt": "帮我查一下广州现在的天气。",
+  "status": 200,
+  "finish": "tool_calls",
+  "calls": [
+   "get_weather"
+  ],
+  "latency": 1.93,
+  "content": ""
+ },
+ {
+  "prompt": "明天上海会下雨吗？用工具看看。",
+  "status": 200,
+  "finish": "tool_calls",
+  "calls": [
+   "get_weather"
+  ],
+  "latency": 2.59,
+  "content": ""
+ },
+ {
+  "prompt": "查一下成都当前天气。",
+  "status": 200,
+  "finish": "tool_calls",
+  "calls": [
+   "get_weather"
+  ],
+  "latency": 2.8,
+  "content": ""
+ },
+ {
+  "prompt": "我需要知道杭州的实时气温，调用工具。",
+  "status": 200,
+  "finish": "tool_calls",
+  "calls": [
+   "get_weather"
+  ],
+  "latency": 2.43,
+  "content": ""
+ },
+ {
+  "prompt": "从北京飞深圳明天的航班有哪些？",
+  "status": 200,
+  "finish": "tool_calls",
+  "calls": [
+   "search_flights"
+  ],
+  "latency": 1.87,
+  "content": ""
+ },
+ {
+  "prompt": "帮我找 12 月 3 日上海到东京的机票，用工具查。",
+  "status": 200,
+  "finish": "tool_calls",
+  "calls": [
+   "search_flights"
+  ],
+  "latency": 2.3,
+  "content": ""
+ }
+]

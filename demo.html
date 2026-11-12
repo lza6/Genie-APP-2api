@@ -3,241 +3,444 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Genie 2API · 本地 Demo</title>
+<title>Genie 7.9.2 → 2API · Demo</title>
 <style>
-  :root{
-    --bg:#0b0d12; --panel:#141821; --panel-2:#1b2130; --line:#262d3d;
-    --text:#e8ecf4; --muted:#8b95a8; --accent:#6c8cff; --accent-2:#9b6cff;
-    --ok:#3ddc97; --warn:#ffb84d; --err:#ff6b6b;
+  :root {
+    --bg: #0b0d12; --panel: #141821; --panel2: #1b2130; --line: #262d3d;
+    --fg: #e6e9ef; --muted: #8b94a7; --accent: #5b8cff; --ok: #35d07f; --err: #ff5f6d; --warn: #f5b84b;
   }
-  *{box-sizing:border-box}
-  body{
-    margin:0; min-height:100vh; font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",sans-serif;
-    background:radial-gradient(1200px 600px at 15% -10%,#1b2340 0%,transparent 60%),var(--bg);
-    color:var(--text); display:flex; flex-direction:column;
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  .app { display: grid; grid-template-columns: 260px minmax(0, 1fr) 300px; gap: 0; height: 100vh; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 14px 12px; }
+  aside.right { border-right: none; border-left: 1px solid var(--line); }
+  main { display: flex; flex-direction: column; min-width: 0; }
+  header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  .tabs { display: flex; gap: 4px; background: var(--panel2); border-radius: 9px; padding: 3px; }
+  .tabs button { border: none; background: transparent; padding: 5px 12px; border-radius: 7px; font-size: 12px; color: var(--muted); }
+  .tabs button.active { background: var(--bg); color: var(--fg); border: 1px solid var(--line); }
+  .pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .pane[hidden] { display: none; }
+  #imagePane { padding: 18px 16px; overflow-y: auto; }
+  .gen-form { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
+  .gen-form textarea { min-height: 78px; }
+  .gen-out { margin-top: 18px; max-width: 560px; }
+  .gen-out img { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; }
+  .gate { border: 1px solid #4d3f1f; background: #1c1708; color: var(--warn); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.6; }
+  .gate b { color: #ffd27a; }
+  .steps { font: 12px/1.7 ui-monospace, Consolas, monospace; color: var(--muted); margin-top: 10px; }
+  .toolcard { border: 1px solid #2b3a55; background: #101827; border-radius: 10px;
+              padding: 9px 12px; font: 12px/1.7 ui-monospace, Consolas, monospace; margin: 6px 0; }
+  .toolcard .tname { color: #7fb3ff; font-weight: 600; }
+  .toolcard .tres { color: var(--muted); white-space: pre-wrap; }
+  .switch { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted);
+            white-space: nowrap; padding-bottom: 9px; }
+  .switch input { accent-color: var(--accent); }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .tag.real { color: var(--ok); border-color: #1f4d38; }
+  .tag.mock { color: var(--warn); border-color: #4d3f1f; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 5px; }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.err { background: var(--err); }
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 16px 0 8px; font-weight: 600; }
+  h2:first-child { margin-top: 0; }
+  .item { padding: 7px 9px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; font-size: 13px; }
+  .item:hover { background: var(--panel2); }
+  .item.active { background: var(--panel2); border-color: var(--accent); }
+  .item .sub { color: var(--muted); font-size: 11px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .pro { color: var(--warn); font-size: 10px; border: 1px solid #4d3f1f; border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+  #log { flex: 1; overflow-y: auto; padding: 18px 16px 8px; }
+  .msg { display: flex; gap: 10px; margin-bottom: 18px; }
+  .msg .who { flex: 0 0 38px; font-size: 11px; color: var(--muted); padding-top: 3px; text-align: right; }
+  .msg .body { flex: 1; white-space: pre-wrap; word-break: break-word; min-width: 0; }
+  .msg.user .body { color: #c9d4ea; }
+  .msg.assistant .body { color: #f2f5fa; }
+  .meta { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .err { color: var(--err); }
+  .warn { color: var(--warn); }
+  #composer { display: flex; gap: 10px; padding: 12px 16px 16px; align-items: flex-end; border-top: 1px solid var(--line); }
+  textarea { flex: 1; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font: inherit; resize: vertical; min-height: 50px; max-height: 180px; }
+  textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  button { background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  select { background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font: inherit; width: 100%; }
+  .kv { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px dashed #1f2532; }
+  .kv span:last-child { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .kv span:first-child { color: var(--muted); }
+  .bar { height: 5px; background: var(--panel2); border-radius: 999px; overflow: hidden; margin: 8px 0 12px; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--ok)); width: 0; transition: width .3s; }
+  .hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  @media (max-width: 980px) {
+    .app { grid-template-columns: 1fr; height: auto; }
+    aside { max-height: 220px; border-right: none; border-bottom: 1px solid var(--line); }
+    aside.right { border-left: none; }
+    #log { min-height: 46vh; }
   }
-  header{
-    display:flex; align-items:center; gap:14px; padding:16px 22px;
-    border-bottom:1px solid var(--line); background:rgba(20,24,33,.72); backdrop-filter:blur(10px);
-  }
-  .logo{
-    width:34px;height:34px;border-radius:10px;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;
-  }
-  header h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.2px}
-  header .sub{font-size:12px;color:var(--muted)}
-  .spacer{flex:1}
-  .pill{
-    font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
-    background:var(--panel);color:var(--muted);white-space:nowrap;
-  }
-  .pill b{color:var(--ok);font-weight:600}
-  main{flex:1;overflow-y:auto;padding:26px 22px 8px}
-  .wrap{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-  .msg{display:flex;gap:12px;animation:fade .22s ease}
-  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  .avatar{
-    width:30px;height:30px;border-radius:9px;flex:0 0 30px;display:grid;place-items:center;
-    font-size:12px;font-weight:700;background:var(--panel-2);color:var(--muted);
-  }
-  .msg.user .avatar{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff}
-  .bubble{
-    background:var(--panel);border:1px solid var(--line);border-radius:14px;
-    padding:12px 15px;max-width:100%;white-space:pre-wrap;word-break:break-word;
-  }
-  .msg.user .bubble{background:var(--panel-2);border-color:#2f3850}
-  .meta{font-size:11px;color:var(--muted);margin-bottom:4px}
-  .empty{text-align:center;color:var(--muted);padding:60px 20px}
-  .empty h2{color:var(--text);font-size:18px;margin:0 0 8px}
-  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px}
-  .chip{
-    border:1px solid var(--line);background:var(--panel);color:var(--text);
-    padding:8px 14px;border-radius:999px;cursor:pointer;font-size:13px;transition:.15s;
-  }
-  .chip:hover{border-color:var(--accent);color:var(--accent)}
-  footer{border-top:1px solid var(--line);background:rgba(20,24,33,.8);padding:14px 22px}
-  .composer{max-width:820px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
-  textarea{
-    flex:1;resize:none;min-height:46px;max-height:160px;padding:13px 15px;border-radius:13px;
-    border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;outline:none;
-  }
-  textarea:focus{border-color:var(--accent)}
-  button.send{
-    height:46px;padding:0 22px;border-radius:13px;border:0;cursor:pointer;font-weight:600;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:14px;
-  }
-  button.send:disabled{opacity:.5;cursor:not-allowed}
-  .hint{max-width:820px;margin:8px auto 0;font-size:11px;color:var(--muted);display:flex;gap:12px}
-  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:5px}
-  .dot.err{background:var(--err)}
-  .cursor::after{content:"▋";color:var(--accent);animation:blink 1s steps(2) infinite}
-  @keyframes blink{50%{opacity:0}}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">G</div>
-  <div>
-    <h1>Genie 2API</h1>
-    <div class="sub">co.appnation.geniechat v7.9.2 · gpt-4o-mini</div>
-  </div>
-  <div class="spacer"></div>
-  <div class="pill" id="stats">号池加载中…</div>
-</header>
+<div class="app">
+  <aside>
+    <h2>系统助手</h2>
+    <div id="assistantList"><div class="hint">加载中…</div></div>
+  </aside>
 
-<main>
-  <div class="wrap" id="list">
-    <div class="empty" id="empty">
-      <h2>本地逆向 Demo</h2>
-      <div>上游真实能力：单模型 <b>gpt-4o-mini</b> 文本补全，SSE 流式。</div>
-      <div>每账号每天 7 次，网关自动轮换号池。</div>
-      <div class="chips">
-        <div class="chip">用一句话解释 Server-Sent Events 是什么</div>
-        <div class="chip">写一个 Python 快速排序</div>
-        <div class="chip">把「你好世界」翻译成 8 种语言</div>
+  <main>
+    <header>
+      <h1>Genie → OpenAI 2API</h1>
+      <div class="tabs">
+        <button data-tab="chat" class="active">对话</button>
+        <button data-tab="image">生图</button>
+      </div>
+      <span class="tag" id="modeTag">…</span>
+      <span class="tag"><span class="dot" id="healthDot"></span><span id="healthText">连接中</span></span>
+      <span class="tag" id="latTag">—</span>
+      <button id="clearBtn" style="margin-left:auto">清空</button>
+    </header>
+
+    <div class="pane" id="chatPane">
+      <div id="log"></div>
+
+      <div id="composer">
+        <textarea id="input" placeholder="输入消息，Enter 发送，Shift+Enter 换行"></textarea>
+        <label class="switch"><input type="checkbox" id="toolToggle"> 工具调用</label>
+        <select id="modelSel" style="width:180px"></select>
+        <button class="primary" id="sendBtn">发送</button>
       </div>
     </div>
-  </div>
-</main>
 
-<footer>
-  <div class="composer">
-    <textarea id="input" rows="1" placeholder="输入消息，Enter 发送，Shift+Enter 换行"></textarea>
-    <button class="send" id="send">发送</button>
-  </div>
-  <div class="hint">
-    <span><span class="dot" id="dot"></span><span id="status">就绪</span></span>
-    <span>流式输出 · 号池自动换号</span>
-  </div>
-</footer>
+    <div class="pane" id="imagePane" hidden>
+      <div class="gen-form">
+        <textarea id="imgPrompt" placeholder="描述要生成的图片，例如：一只橘猫坐在窗台上，水彩风格"></textarea>
+        <button class="primary" id="imgBtn" style="align-self:flex-start">生成图片</button>
+      </div>
+      <div class="gen-out" id="imgOut"></div>
+    </div>
+  </main>
+
+  <aside class="right">
+    <h2>号池</h2>
+    <div class="bar"><i id="quotaBar"></i></div>
+    <div class="kv"><span>剩余额度</span><span id="kRemaining">—</span></div>
+    <div class="kv"><span>账号数</span><span id="kAccounts">—</span></div>
+    <div class="kv"><span>今日已用</span><span id="kUsed">—</span></div>
+    <div class="kv"><span>软限流账号</span><span id="kSoft">—</span></div>
+
+    <h2>请求统计</h2>
+    <div class="kv"><span>请求总数</span><span id="kReq">0</span></div>
+    <div class="kv"><span>上游成功</span><span id="kOk">0</span></div>
+    <div class="kv"><span>上游失败</span><span id="kErr">0</span></div>
+    <div class="kv"><span>Pro 门禁</span><span id="kPro">0</span></div>
+    <div class="kv"><span>p50</span><span id="kP50">—</span></div>
+    <div class="kv"><span>p95</span><span id="kP95">—</span></div>
+
+    <h2>说明</h2>
+    <p class="hint">
+      免费档仅 <code>gpt-4o-mini</code>；其余模型上游返回 402 NEEDS_PRO。<br>
+      上游忽略 <code>parameters</code>（含 systemPrompt），网关把 system 与人设前置拼进首条消息。<br>
+      每个匿名 uid 每天 8 次，池内自动轮转换号。
+    </p>
+  </aside>
+</div>
 
 <script>
-const list = document.getElementById('list');
-const empty = document.getElementById('empty');
-const input = document.getElementById('input');
-const sendBtn = document.getElementById('send');
-const statsEl = document.getElementById('stats');
-const statusEl = document.getElementById('status');
-const dotEl = document.getElementById('dot');
-const history = [];
+const $ = (id) => document.getElementById(id);
+let assistantKey = "";
+let history = [];
 
-function setStatus(text, isError) {
-  statusEl.textContent = text;
-  dotEl.className = 'dot' + (isError ? ' err' : '');
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
 }
 
-async function refreshStats() {
-  try {
-    const res = await fetch('/api/stats');
-    const s = await res.json();
-    statsEl.innerHTML = `号池 <b>${s.usable}</b>/${s.accounts} 可用 · 剩余 <b>${s.capacity_left}</b> 次`;
-  } catch (e) {
-    statsEl.textContent = '号池状态不可用';
+function addMsg(role, text) {
+  const wrap = el("div", "msg " + role);
+  wrap.appendChild(el("div", "who", role === "user" ? "你" : "G"));
+  const body = el("div", "body", text || "");
+  wrap.appendChild(body);
+  const meta = el("div", "meta", "");
+  wrap.appendChild(meta);
+  $("log").appendChild(wrap);
+  $("log").scrollTop = $("log").scrollHeight;
+  return { body, meta };
+}
+
+async function loadModels() {
+  const r = await fetch("/v1/models");
+  const j = await r.json();
+  const sel = $("modelSel");
+  sel.innerHTML = "";
+  for (const m of j.data) {
+    const o = document.createElement("option");
+    o.value = m.id;
+    o.textContent = m.id + (m.free ? " · 免费" : " · Pro");
+    sel.appendChild(o);
   }
 }
 
-function appendMessage(role, text) {
-  empty.style.display = 'none';
-  const wrap = document.createElement('div');
-  wrap.className = 'msg ' + role;
-  const avatar = document.createElement('div');
-  avatar.className = 'avatar';
-  avatar.textContent = role === 'user' ? '你' : 'G';
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble';
-  const meta = document.createElement('div');
-  meta.className = 'meta';
-  meta.textContent = role === 'user' ? '你' : 'Genie';
-  const body = document.createElement('div');
-  body.textContent = text;
-  bubble.append(meta, body);
-  wrap.append(avatar, bubble);
-  list.appendChild(wrap);
-  list.parentElement.scrollTop = list.parentElement.scrollHeight;
-  return body;
+async function loadAssistants() {
+  const box = $("assistantList");
+  box.innerHTML = "";
+  const none = el("div", "item active");
+  none.innerHTML = '<b>无（纯对话）</b><span class="sub">不注入任何系统提示词</span>';
+  none.onclick = () => { assistantKey = ""; setActive(none); };
+  box.appendChild(none);
+
+  let j;
+  try {
+    j = await (await fetch("/v1/genie/assistants")).json();
+  } catch (e) {
+    box.appendChild(el("div", "hint", "助手目录加载失败（需要上游鉴权）"));
+    return;
+  }
+  const items = j.data || [];
+  if (!items.length) { box.appendChild(el("div", "hint", "目录为空")); return; }
+  const frag = document.createDocumentFragment();
+  for (const a of items) {
+    const title = (a.title && (a.title.zh || a.title.en)) || a.uniqueKey;
+    const d = el("div", "item");
+    const pro = a.isPro ? '<span class="pro">PRO</span>' : "";
+    d.innerHTML = `<b>${title}</b>${pro}<span class="sub">${a.uniqueKey}</span>`;
+    d.onclick = () => { assistantKey = a.uniqueKey; setActive(d); };
+    frag.appendChild(d);
+  }
+  box.appendChild(frag);
 }
 
-async function send(text) {
-  const content = text.trim();
-  if (!content || sendBtn.disabled) return;
-  sendBtn.disabled = true;
-  input.value = '';
-  input.style.height = '46px';
-  setStatus('请求中…', false);
+let activeNode = null;
+function setActive(node) {
+  if (activeNode) activeNode.classList.remove("active");
+  activeNode = node;
+  activeNode.classList.add("active");
+}
 
-  appendMessage('user', content);
-  history.push({ role: 'user', content });
-  const target = appendMessage('assistant', '');
-  target.classList.add('cursor');
-
-  let answer = '';
-  let failed = false;
+async function poll() {
   try {
-    const res = await fetch('/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-4o-mini', messages: history, stream: true })
-    });
-    if (!res.ok || !res.body) throw new Error('HTTP ' + res.status);
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n\n');
-      buffer = lines.pop();
-      for (const block of lines) {
-        const line = block.trim();
-        if (!line.startsWith('data: ')) continue;
-        const payload = line.slice(6);
-        if (payload === '[DONE]') continue;
-        let event;
-        try { event = JSON.parse(payload); } catch { continue; }
-        if (event.error) throw new Error(event.error.message || '上游错误');
-        const delta = event.choices && event.choices[0] && event.choices[0].delta;
-        if (delta && delta.content) {
-          answer += delta.content;
-          target.textContent = answer;
-          list.parentElement.scrollTop = list.parentElement.scrollHeight;
+    const s = await (await fetch("/stats")).json();
+    $("healthDot").className = "dot ok";
+    $("healthText").textContent = "在线";
+    $("modeTag").textContent = s.mode === "mock" ? "MOCK 模式" : "REAL 上游";
+    $("modeTag").className = "tag " + (s.mode === "mock" ? "mock" : "real");
+    const p = s.pool || {};
+    $("kRemaining").textContent = p.remaining_quota ?? "—";
+    $("kAccounts").textContent = p.accounts ?? "—";
+    $("kUsed").textContent = p.used_today ?? "—";
+    $("kSoft").textContent = p.soft_limited ?? "—";
+    const total = (p.accounts || 0) * 8 || 1;
+    $("quotaBar").style.width = Math.min(100, ((p.remaining_quota || 0) / total) * 100) + "%";
+    $("kReq").textContent = s.requests;
+    $("kOk").textContent = s.upstream_ok;
+    $("kErr").textContent = s.upstream_err;
+    $("kPro").textContent = s.pro_blocked ?? 0;
+    $("kP50").textContent = s.latency_p50_ms ? s.latency_p50_ms + " ms" : "—";
+    $("kP95").textContent = s.latency_p95_ms ? s.latency_p95_ms + " ms" : "—";
+  } catch (e) {
+    $("healthDot").className = "dot err";
+    $("healthText").textContent = "离线";
+  }
+}
+
+const TOOL_DEFS = [{
+  type: "function",
+  function: {
+    name: "get_weather",
+    description: "查询指定城市当前的天气",
+    parameters: {
+      type: "object",
+      properties: { city: { type: "string", description: "城市名，例如 北京" } },
+      required: ["city"],
+    },
+  },
+}];
+const WEATHER = {
+  "北京": "晴，21°C，西北风 2 级", "上海": "多云，24°C", "广州": "阵雨，28°C",
+  "深圳": "雷阵雨，30°C", "成都": "阴，19°C", "杭州": "晴，22°C",
+};
+
+function execTool(name, args) {
+  if (name === "get_weather") {
+    return JSON.stringify({ city: args.city, weather: WEATHER[args.city] || "晴，23°C", source: "local-demo" });
+  }
+  return JSON.stringify({ error: "unknown tool: " + name });
+}
+
+function toolCard(slot, name, args, result) {
+  const card = document.createElement("div");
+  card.className = "toolcard";
+  card.innerHTML =
+    `<div class="tname">→ ${name}(${JSON.stringify(args)})</div>` +
+    `<div class="tres">${result}</div>`;
+  // 卡片放在 body 之外，否则 body.textContent = full 会把它覆盖掉
+  slot.body.parentNode.insertBefore(card, slot.body);
+}
+
+async function streamOnce(body, slot, firstRound) {
+  const resp = await fetch("/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    const j = await resp.json().catch(() => ({}));
+    return { text: "", calls: [], error: (j.error ? j.error.message : String(resp.status)) };
+  }
+  const reader = resp.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "", full = "";
+  const calls = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const parts = buf.split("\n\n");
+    buf = parts.pop();
+    for (const part of parts) {
+      for (const line of part.split("\n")) {
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        let j;
+        try { j = JSON.parse(payload); } catch { continue; }
+        if (j.error) return { text: full, calls, error: j.error.code + ": " + j.error.message };
+        const ch = (j.choices || [])[0];
+        if (!ch) continue;
+        const d = ch.delta || {};
+        if (d.content) {
+          full += d.content;
+          slot.body.textContent = full;
+          $("log").scrollTop = $("log").scrollHeight;
+        }
+        if (d.tool_calls) {
+          for (const tc of d.tool_calls) {
+            const i = tc.index ?? 0;
+            if (!calls[i]) calls[i] = { id: tc.id, type: "function", function: { name: "", arguments: "" } };
+            if (tc.id) calls[i].id = tc.id;
+            if (tc.function && tc.function.name) calls[i].function.name += tc.function.name;
+            if (tc.function && tc.function.arguments) calls[i].function.arguments += tc.function.arguments;
+          }
         }
       }
     }
-  } catch (error) {
-    failed = true;
-    answer = answer || '';
-    target.textContent = answer + (answer ? '\n\n' : '') + '⚠️ ' + error.message;
-  } finally {
-    target.classList.remove('cursor');
-    sendBtn.disabled = false;
-    if (!failed) {
-      history.push({ role: 'assistant', content: answer });
-      setStatus('完成', false);
-    } else {
-      setStatus('失败', true);
+  }
+  return { text: full, calls: calls.filter(Boolean), error: null };
+}
+
+async function send() {
+  const input = $("input");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  $("sendBtn").disabled = true;
+  addMsg("user", text);
+  history.push({ role: "user", content: text });
+  const slot = addMsg("assistant", "");
+  const t0 = performance.now();
+  const model = $("modelSel").value;
+  const useTools = $("toolToggle").checked;
+  let msgs = history.slice(-12);
+
+  try {
+    for (let round = 0; round < 3; round++) {
+      const body = { model, stream: true, messages: msgs };
+      if (assistantKey) body.genie_assistant = assistantKey;
+      if (useTools) body.tools = TOOL_DEFS;
+
+      const res = await streamOnce(body, slot, round === 0);
+      if (res.error) {
+        slot.body.textContent = (res.text ? res.text + "\n" : "") + "错误：" + res.error;
+        slot.body.className = "body err";
+        break;
+      }
+      if (res.calls.length) {
+        const toolMsgs = [];
+        for (const tc of res.calls) {
+          let args = {};
+          try { args = JSON.parse(tc.function.arguments || "{}"); } catch { args = {}; }
+          const out = execTool(tc.function.name, args);
+          toolCard(slot, tc.function.name, args, out);
+          toolMsgs.push({ role: "tool", tool_call_id: tc.id, content: out });
+        }
+        msgs = [...msgs, { role: "assistant", content: null, tool_calls: res.calls }, ...toolMsgs];
+        continue;
+      }
+      history.push({ role: "assistant", content: res.text });
+      const ms = Math.round(performance.now() - t0);
+      slot.meta.textContent = ms + " ms · " + model + (assistantKey ? " · " + assistantKey : "") +
+        (useTools ? " · tools" : "");
+      $("latTag").textContent = ms + " ms";
+      break;
     }
-    refreshStats();
-    input.focus();
+  } catch (e) {
+    slot.body.textContent = "网络错误：" + e;
+    slot.body.className = "body err";
+  } finally {
+    $("sendBtn").disabled = false;
+    poll();
   }
 }
 
-sendBtn.addEventListener('click', () => send(input.value));
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); }
+$("sendBtn").onclick = send;
+$("input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
 });
-input.addEventListener('input', () => {
-  input.style.height = '46px';
-  input.style.height = Math.min(input.scrollHeight, 160) + 'px';
-});
-document.querySelectorAll('.chip').forEach((chip) => {
-  chip.addEventListener('click', () => send(chip.textContent));
+$("clearBtn").onclick = () => { $("log").innerHTML = ""; history = []; };
+
+document.querySelectorAll('.tabs button').forEach((btn) => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    $('chatPane').hidden = btn.dataset.tab !== 'chat';
+    $('imagePane').hidden = btn.dataset.tab !== 'image';
+  };
 });
 
-refreshStats();
-setInterval(refreshStats, 15000);
-input.focus();
+async function generateImage() {
+  const prompt = $('imgPrompt').value.trim();
+  if (!prompt) return;
+  const btn = $('imgBtn');
+  btn.disabled = true;
+  $('imgOut').innerHTML = '<div class="hint">请求中…</div>';
+  const t0 = performance.now();
+  try {
+    const r = await fetch('/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, model: 'genie-image' }),
+    });
+    const j = await r.json();
+    const ms = Math.round(performance.now() - t0);
+    if (!r.ok) {
+      const e = j.error || {};
+      const steps = (j.genie && j.genie.steps) || [];
+      const stepText = steps.map((s) => `${s.status} · ${s.service} · step ${s.step}`).join('<br>');
+      $('imgOut').innerHTML =
+        `<div class="gate"><b>${e.code}</b> — ${e.message}` +
+        (stepText ? `<div class="steps">${stepText}</div>` : '') + '</div>' +
+        `<div class="meta">${ms} ms · 上游 agent 已进入 text2image，工具执行被账号权益拦截</div>`;
+    } else {
+      const d = (j.data || [])[0] || {};
+      $('imgOut').innerHTML = d.url
+        ? `<img src="${d.url}" alt="generated"><div class="meta">${ms} ms · ${d.revised_prompt || ''}</div>`
+        : `<div class="hint">上游未返回图片：${d.note || ''}</div>`;
+    }
+  } catch (e) {
+    $('imgOut').innerHTML = `<div class="err">网络错误：${e}</div>`;
+  } finally {
+    btn.disabled = false;
+    poll();
+  }
+}
+$('imgBtn').onclick = generateImage;
+
+loadModels();
+loadAssistants();
+poll();
+setInterval(poll, 3000);
 </script>
 </body>
 </html>

@@ -1,0 +1,44 @@
+[
+ {
+  "tag": "real-c1",
+  "concurrency": 1,
+  "total": 6,
+  "wall_s": 15.92,
+  "rps": 0.38,
+  "ok": 6,
+  "fail": 0,
+  "fail_rate": 0.0,
+  "p50_ms": 2311.0,
+  "p95_ms": 2353.3,
+  "max_ms": 4562.0,
+  "errors": {}
+ },
+ {
+  "tag": "real-c2",
+  "concurrency": 2,
+  "total": 6,
+  "wall_s": 7.48,
+  "rps": 0.8,
+  "ok": 6,
+  "fail": 0,
+  "fail_rate": 0.0,
+  "p50_ms": 2243.3,
+  "p95_ms": 2459.9,
+  "max_ms": 2920.1,
+  "errors": {}
+ },
+ {
+  "tag": "real-c4",
+  "concurrency": 4,
+  "total": 6,
+  "wall_s": 8.11,
+  "rps": 0.74,
+  "ok": 6,
+  "fail": 0,
+  "fail_rate": 0.0,
+  "p50_ms": 4053.2,
+  "p95_ms": 5018.8,
+  "max_ms": 5167.6,
+  "errors": {}
+ }
+]

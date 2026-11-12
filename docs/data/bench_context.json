@@ -1,0 +1,52 @@
+{
+ "context": [
+  {
+   "chars": 2089,
+   "target": 2000,
+   "status": 200,
+   "found": true,
+   "answer": "MAGIC-2000",
+   "raw_head": null
+  },
+  {
+   "chars": 8124,
+   "target": 8000,
+   "status": 200,
+   "found": true,
+   "answer": "MAGIC-8000",
+   "raw_head": null
+  },
+  {
+   "chars": 32095,
+   "target": 32000,
+   "status": 200,
+   "found": true,
+   "answer": "MAGIC-32000",
+   "raw_head": null
+  },
+  {
+   "chars": 64055,
+   "target": 64000,
+   "status": 200,
+   "found": true,
+   "answer": "MAGIC-64000",
+   "raw_head": null
+  },
+  {
+   "chars": 128061,
+   "target": 128000,
+   "status": 200,
+   "found": true,
+   "answer": "MAGIC-128000",
+   "raw_head": null
+  },
+  {
+   "chars": 256071,
+   "target": 256000,
+   "status": 200,
+   "found": false,
+   "answer": "It seems like you've provided an extremely lengthy and repetitive text. How can I assist you with it? If you have a specific question or need help with somethin",
+   "raw_head": null
+  }
+ ]
+}

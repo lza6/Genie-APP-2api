@@ -1,0 +1,58 @@
+[
+ {
+  "tag": "auto-c1",
+  "concurrency": 1,
+  "total": 40,
+  "wall_s": 6.82,
+  "rps": 5.87,
+  "ok": 40,
+  "fail": 0,
+  "fail_rate": 0.0,
+  "p50_ms": 168.4,
+  "p95_ms": 182.1,
+  "max_ms": 190.0,
+  "errors": {}
+ },
+ {
+  "tag": "auto-c5",
+  "concurrency": 5,
+  "total": 40,
+  "wall_s": 1.4,
+  "rps": 28.56,
+  "ok": 40,
+  "fail": 0,
+  "fail_rate": 0.0,
+  "p50_ms": 169.4,
+  "p95_ms": 179.4,
+  "max_ms": 190.6,
+  "errors": {}
+ },
+ {
+  "tag": "auto-c10",
+  "concurrency": 10,
+  "total": 40,
+  "wall_s": 0.7,
+  "rps": 57.19,
+  "ok": 40,
+  "fail": 0,
+  "fail_rate": 0.0,
+  "p50_ms": 171.3,
+  "p95_ms": 176.2,
+  "max_ms": 181.3,
+  "errors": {}
+ },
+ {
+  "tag": "auto-c20",
+  "concurrency": 20,
+  "total": 40,
+  "wall_s": 0.39,
+  "rps": 101.97,
+  "ok": 40,
+  "fail": 0,
+  "fail_rate": 0.0,
+  "p50_ms": 186.5,
+  "p95_ms": 195.7,
+  "max_ms": 196.3,
+  "errors": {}
+ }
+]

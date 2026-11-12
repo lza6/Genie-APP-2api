@@ -1,136 +1,145 @@
-#!/usr/bin/env python3
-"""Genie 2API 本地压测: 并发打本地网关, 验证号池自动换号与端到端延迟。
+# -*- coding: utf-8 -*-
+"""Genie 2API 网关压测。
 
-用法:
-  python stress_test.py --requests 20 --concurrency 4
-  python stress_test.py --requests 40 --concurrency 8 --mode nonstream
+用法
+    python stress_test.py                          # mock 网关默认档位
+    python stress_test.py --levels 1,5,10,20 --n 40
+    python stress_test.py --base http://127.0.0.1:8952 --stream
+    python stress_test.py --real --n 16 --levels 2,4   # 注意：真打上游会消耗匿名号池额度
+
+指标：成功/失败、p50/p95/max、RPS、错误码分布、号池消耗。
 """
-
-from __future__ import annotations
-
 import argparse
 import json
 import statistics
+import sys
 import threading
 import time
-import urllib.error
-import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
-PROMPTS = [
-    "用一句话说明什么是 TCP 三次握手",
-    "把 hello world 翻译成日语和法语",
-    "写一个 Python 单行去重函数",
-    "列举三个常见 HTTP 状态码及含义",
-    "用 20 字概括相对论",
-    "解释一下什么是幂等",
-]
+import requests
+
+DEFAULT_BASE = "http://127.0.0.1:8952"
+lock = threading.Lock()
 
 
-def one_request(base: str, stream: bool, index: int) -> dict:
-    body = {
-        "model": "gpt-4o-mini",
-        "messages": [{"role": "user", "content": PROMPTS[index % len(PROMPTS)]}],
-        "stream": stream,
-    }
-    request = urllib.request.Request(
-        f"{base}/v1/chat/completions",
-        data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json"},
-    )
-    started = time.time()
+def one_call(base, prompt, stream):
+    t0 = time.time()
+    payload = {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}]}
+    if stream:
+        payload["stream"] = True
     try:
-        with urllib.request.urlopen(request, timeout=180) as response:
-            raw = response.read().decode("utf-8", "replace")
-        elapsed = time.time() - started
         if stream:
-            answer = ""
-            for line in raw.split("\n\n"):
-                if not line.startswith("data: "):
-                    continue
-                payload = line[6:]
-                if payload == "[DONE]":
-                    continue
-                try:
-                    event = json.loads(payload)
-                except json.JSONDecodeError:
-                    continue
-                if event.get("error"):
-                    return {"ok": False, "elapsed": elapsed, "error": event["error"]["message"]}
-                delta = (event.get("choices") or [{}])[0].get("delta") or {}
-                answer += delta.get("content") or ""
-            return {"ok": bool(answer), "elapsed": elapsed, "chars": len(answer)}
-        data = json.loads(raw)
-        if data.get("error"):
-            return {"ok": False, "elapsed": elapsed, "error": data["error"]["message"]}
-        answer = data["choices"][0]["message"]["content"]
-        return {"ok": bool(answer), "elapsed": elapsed, "chars": len(answer)}
-    except urllib.error.HTTPError as error:
-        detail = error.read().decode("utf-8", "replace")[:200]
-        return {"ok": False, "elapsed": time.time() - started, "error": f"HTTP {error.code} {detail}"}
-    except Exception as error:  # noqa: BLE001 - 压测需要记录任何失败
-        return {"ok": False, "elapsed": time.time() - started, "error": str(error)}
+            chars, chunks = 0, 0
+            with requests.post(f"{base}/v1/chat/completions", json=payload, stream=True, timeout=180) as r:
+                if r.status_code != 200:
+                    return {"ok": False, "status": r.status_code, "error": r.text[:160],
+                            "ms": (time.time() - t0) * 1000}
+                for line in r.iter_lines(decode_unicode=False):
+                    if not line or not line.startswith(b"data:"):
+                        continue
+                    body = line[5:].strip()
+                    try:
+                        d = json.loads(body)
+                    except json.JSONDecodeError:
+                        continue
+                    if "error" in d:
+                        return {"ok": False, "status": 200, "error": d["error"].get("code", "ERR"),
+                                "ms": (time.time() - t0) * 1000}
+                    ch = d.get("choices", [{}])[0]
+                    content = ch.get("delta", {}).get("content")
+                    if content:
+                        chars += len(content)
+                        chunks += 1
+            return {"ok": chars > 0, "status": 200, "ms": (time.time() - t0) * 1000,
+                    "chars": chars, "chunks": chunks,
+                    "error": None if chars else "empty_stream"}
+        r = requests.post(f"{base}/v1/chat/completions", json=payload, timeout=180)
+        if r.status_code != 200:
+            return {"ok": False, "status": r.status_code, "error": r.text[:160], "ms": (time.time() - t0) * 1000}
+        j = r.json()
+        text = j.get("choices", [{}])[0].get("message", {}).get("content", "")
+        return {"ok": bool(text), "status": 200, "ms": (time.time() - t0) * 1000, "chars": len(text),
+                "error": None if text else "empty_reply"}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "status": 0, "error": f"{type(e).__name__}: {e}", "ms": (time.time() - t0) * 1000}
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--base", default="http://127.0.0.1:8952")
-    parser.add_argument("--requests", type=int, default=20)
-    parser.add_argument("--concurrency", type=int, default=4)
-    parser.add_argument("--mode", choices=["stream", "nonstream"], default="stream")
-    args = parser.parse_args()
+def run_level(base, concurrency, total, stream, tag):
+    results = []
+    counter = {"i": 0}
 
-    stream = args.mode == "stream"
-    results: list[dict] = []
-    lock = threading.Lock()
-    queue = list(range(args.requests))
-    started = time.time()
-
-    def worker() -> None:
+    def worker(_):
         while True:
             with lock:
-                if not queue:
+                if counter["i"] >= total:
                     return
-                index = queue.pop()
-            result = one_request(args.base, stream, index)
-            with lock:
-                results.append(result)
+                idx = counter["i"]
+                counter["i"] += 1
+            results.append(one_call(base, f"压力测试请求 #{idx}，请简短回应。", stream))
 
-    threads = [threading.Thread(target=worker) for _ in range(args.concurrency)]
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
-    total = time.time() - started
+    t0 = time.time()
+    with ThreadPoolExecutor(max_workers=concurrency) as ex:
+        list(ex.map(worker, range(concurrency)))
+    wall = time.time() - t0
 
     ok = [r for r in results if r["ok"]]
-    failed = [r for r in results if not r["ok"]]
-    latencies = sorted(r["elapsed"] for r in ok)
+    ms = [r["ms"] for r in ok]
+    errs = {}
+    for r in results:
+        if not r["ok"]:
+            key = str(r.get("error"))[:60]
+            errs[key] = errs.get(key, 0) + 1
+    out = {
+        "tag": tag, "concurrency": concurrency, "total": total, "wall_s": round(wall, 2),
+        "rps": round(total / wall, 2) if wall else 0,
+        "ok": len(ok), "fail": total - len(ok),
+        "fail_rate": round((total - len(ok)) / total * 100, 1) if total else 0,
+        "p50_ms": round(statistics.median(ms), 1) if ms else None,
+        "p95_ms": round(sorted(ms)[int(len(ms) * 0.95) - 1], 1) if len(ms) > 1 else (round(ms[0], 1) if ms else None),
+        "max_ms": round(max(ms), 1) if ms else None,
+        "errors": errs,
+    }
+    print(json.dumps(out, ensure_ascii=False))
+    return out
 
-    def pct(p: float) -> float:
-        if not latencies:
-            return 0.0
-        k = min(len(latencies) - 1, int(round(p * (len(latencies) - 1))))
-        return latencies[k]
 
-    stats = json.loads(
-        urllib.request.urlopen(f"{args.base}/api/stats", timeout=30).read().decode()
-    )
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--base", default=DEFAULT_BASE)
+    ap.add_argument("--levels", default="1,3,6,10")
+    ap.add_argument("--n", type=int, default=20, help="每档请求数")
+    ap.add_argument("--stream", action="store_true")
+    ap.add_argument("--real", action="store_true", help="标记真打上游（只影响提示，不改行为）")
+    ap.add_argument("--out", default="")
+    args = ap.parse_args()
 
-    print("=" * 62)
-    print(f"模式 {args.mode} | 并发 {args.concurrency} | 请求 {args.requests} | 耗时 {total:.1f}s")
-    print(f"成功 {len(ok)} / 失败 {len(failed)} | 吞吐 {len(results)/total:.2f} req/s")
-    if latencies:
-        print(
-            f"延迟 平均 {statistics.mean(latencies):.2f}s | P50 {pct(0.5):.2f}s | "
-            f"P95 {pct(0.95):.2f}s | 最大 {latencies[-1]:.2f}s"
-        )
-    if ok:
-        print(f"输出字符数 平均 {statistics.mean(r['chars'] for r in ok):.0f}")
-    for failure in failed[:5]:
-        print(f"  失败样本: {failure['error'][:120]}")
-    print(f"号池: {stats['accounts']} 号 / {stats['usable']} 可用 / 今日已用 {stats['used_today']} 次")
-    print("=" * 62)
+    levels = [int(x) for x in args.levels.split(",") if x.strip()]
+    try:
+        h = requests.get(f"{args.base}/health", timeout=10).json()
+    except Exception as e:  # noqa: BLE001
+        print(f"gateway unreachable: {e}")
+        return 1
+    print(f"gateway mode={h.get('mode')} pool={h.get('pool')}")
+    if args.real and h.get("mode") != "real":
+        print("warning: --real 指定但网关不是 real 模式")
+
+    rows = []
+    for c in levels:
+        rows.append(run_level(args.base, c, args.n, args.stream, f"{'real' if args.real else 'auto'}-c{c}"))
+
+    try:
+        s = requests.get(f"{args.base}/stats", timeout=10).json()
+        print(f"\nfinal stats: requests={s.get('requests')} ok={s.get('upstream_ok')} "
+              f"err={s.get('upstream_err')} soft={s.get('soft_limited')} pool={s.get('pool')}")
+    except Exception:  # noqa: BLE001
+        pass
+
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as f:
+            json.dump(rows, f, ensure_ascii=False, indent=1)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

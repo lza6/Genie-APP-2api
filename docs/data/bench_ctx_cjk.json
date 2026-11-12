@@ -1,0 +1,42 @@
+[
+ {
+  "lang": "zh",
+  "chars": 60058,
+  "target": 60000,
+  "status": 200,
+  "found": true,
+  "answer": "访问码是 CN60000。"
+ },
+ {
+  "lang": "zh",
+  "chars": 88058,
+  "target": 88000,
+  "status": 200,
+  "found": true,
+  "answer": "访问码是 CN88000。"
+ },
+ {
+  "lang": "zh",
+  "chars": 120059,
+  "target": 120000,
+  "status": 200,
+  "found": true,
+  "answer": "访问码是 CN120000。"
+ },
+ {
+  "lang": "zh",
+  "chars": 180059,
+  "target": 180000,
+  "status": 200,
+  "found": true,
+  "answer": "CN180000"
+ },
+ {
+  "lang": "zh",
+  "chars": 236059,
+  "target": 236000,
+  "status": 200,
+  "found": true,
+  "answer": "CN236000"
+ }
+]

@@ -1,0 +1,51 @@
+[
+ {
+  "action": "image_generation",
+  "status": 200,
+  "service": "text2image",
+  "steps": [
+   "tool_calling:text2image",
+   "tool_done:text2image"
+  ],
+  "pro_gate": true,
+  "text": "I would love to answer this, but it seems that you are not subscribed to the Pro version. Please upgrade to Pro for image generation.I would love to answer this, but it seems that you are not subscribed to the Pro version. Please upgrade to Pro for image generation."
+ },
+ {
+  "action": "image_identifier",
+  "status": 200,
+  "service": "text2text",
+  "steps": [],
+  "pro_gate": false,
+  "text": "抱歉，我无法查看或分析图片。不过，如果你对这张图片有具体的描述或问题，我很乐意提供帮助！😊"
+ },
+ {
+  "action": "pdf_summary",
+  "status": 200,
+  "service": "text2text",
+  "steps": [],
+  "pro_gate": false,
+  "text": "好的，这份文档的要点可以总结为：\n\n- **季度营收**：同比增长 12%\n- **成本**：下降了 3%\n\n整体来看，公司的经济表现呈现出良好的增长，收入增加的同时，成本也在降低，这可能会对利润产生积极影响。希望这能帮助到你！如果需要更多信息，欢迎告诉我！😊"
+ },
+ {
+  "action": "tattoo",
+  "status": 200,
+  "service": "text2image",
+  "steps": [
+   "tool_calling:text2image",
+   "tool_done:text2image"
+  ],
+  "pro_gate": true,
+  "text": "I would love to answer this, but it seems that you are not subscribed to the Pro version. Please upgrade to Pro for image generation.I would love to answer this, but it seems that you are not subscribed to the Pro version. Please upgrade to Pro for image generation."
+ },
+ {
+  "action": "logo",
+  "status": 200,
+  "service": "text2image",
+  "steps": [
+   "tool_calling:text2image",
+   "tool_done:text2image"
+  ],
+  "pro_gate": true,
+  "text": "I would love to answer this, but it seems that you are not subscribed to the Pro version. Please upgrade to Pro for image generation.I would love to answer this, but it seems that you are not subscribed to the Pro version. Please upgrade to Pro for image generation."
+ }
+]

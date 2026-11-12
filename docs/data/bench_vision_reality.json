@@ -1,0 +1,20 @@
+[
+ {
+  "case": "dice-known",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/280px-PNG_transparency_demonstration_1.png",
+  "status": 200,
+  "answer": "这张图里有两个骰子。第一个骰子朝上的点数是5，第二个骰子是2。"
+ },
+ {
+  "case": "picsum-random",
+  "url": "https://picsum.photos/seed/geniebench42/600/400",
+  "status": 200,
+  "answer": "抱歉，我无法查看或描述图片内容。如果你能告诉我图片的具体内容或主题，我会很乐意帮你分析或提供相关信息！😊"
+ },
+ {
+  "case": "dead-url",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/this-file-does-not-exist-xyz.jpg",
+  "status": 200,
+  "answer": "抱歉，我无法查看或分析图片。请问您想了解有关这张图片的具体信息吗？我可以帮助您回答其他相关问题！😊"
+ }
+]

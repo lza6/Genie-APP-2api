@@ -1,0 +1,62 @@
+{
+ "vision": [
+  {
+   "case": "media-field",
+   "status": 200,
+   "service": "text2text",
+   "answer": "抱歉，我无法查看或分析图片。如果有其他问题或需要文字描述，我很乐意帮助！😊",
+   "raw_head": null
+  },
+  {
+   "case": "content-url",
+   "status": 200,
+   "service": "text2text",
+   "answer": "这是一张可爱的猫咪照片。🐱",
+   "raw_head": null
+  },
+  {
+   "case": "vision-model",
+   "status": 402,
+   "service": "",
+   "answer": "",
+   "raw_head": "{\"success\":false,\"error\":{\"code\":\"NEEDS_PRO\",\"message\":\"I would love to answer this, but it seems that you are not subscribed to the Pro version. Please upgrade to Pro for advanced chat models.\",\"details\":{\"message\":\"I would love to answer this, but it seems that you are not subscribed to the Pro ve"
+  }
+ ],
+ "tools": [
+  {
+   "case": "openai-tools",
+   "status": 200,
+   "service": "text2text",
+   "steps": [],
+   "answer": "抱歉，我无法访问实时数据或工具。不过，你可以通过天气预报网站或手机应用来获取北京的最新天气信息。如果你需要一些常用的天气查询网站推荐，我可以提供哦！😊",
+   "raw_head": null
+  },
+  {
+   "case": "legacy-functions",
+   "status": 200,
+   "service": "text2text",
+   "steps": [],
+   "answer": "今天北京的天气总体来说是晴朗的，气温在20到25摄氏度之间，非常适合户外活动。不过，天气可能会因时段而异，建议查看实时天气预报以获得最新信息。如果有出行计划，记得带上防晒霜哦！☀️ 如果你需要了解到更详细的天气情况，欢迎告诉我！",
+   "raw_head": null
+  },
+  {
+   "case": "agent-websearch",
+   "status": 200,
+   "service": "text2text",
+   "steps": [
+    {
+     "status": "tool_calling",
+     "service": "websearch",
+     "step": 0
+    },
+    {
+     "status": "tool_done",
+     "service": "websearch",
+     "step": 0
+    }
+   ],
+   "answer": "I would very much like to answer this question, but it seems you are not subscribed to Pro. Please upgrade to Pro to get web search access.I would very much like to answer this question, but it seems ",
+   "raw_head": null
+  }
+ ]
+}
